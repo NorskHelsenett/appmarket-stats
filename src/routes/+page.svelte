@@ -1,6 +1,5 @@
 <script>
 	let { data } = $props();
-	console.log(data.instances);
 </script>
 
 <div class="relative overflow-x-auto p-8">

@@ -3,7 +3,6 @@ package main
 import (
 	sync "app-market-cost-report-sync"
 	"context"
-	"fmt"
 
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport"
@@ -150,13 +149,6 @@ func main() {
 
 	if err := getAllInstances(state, client); err != nil {
 		panic(err)
-	}
-
-	for _, instance := range state.instances {
-		app := state.appById(instance.ApplicationID)
-		cluster := state.clusterById(instance.ClusterID)
-
-		fmt.Printf("%s in %s (%s)\n", app.Name, cluster.Name, cluster.Workorder)
 	}
 
 	db.Wipe()
