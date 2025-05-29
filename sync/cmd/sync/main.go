@@ -3,6 +3,7 @@ package main
 import (
 	sync "app-market-cost-report-sync"
 	"context"
+	"os"
 
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport"
@@ -129,7 +130,7 @@ func main() {
 
 	transport := resttransport.NewRorHttpTransport(&httpclient.HttpTransportClientConfig{
 		BaseURL:      "https://api.ror.nhn.no",
-		AuthProvider: httpauthprovider.NewAuthProvider(httpauthprovider.AuthPoviderTypeAPIKey, "dd7994bd-f0a7-41ba-90ee-da335fc12852"),
+		AuthProvider: httpauthprovider.NewAuthProvider(httpauthprovider.AuthPoviderTypeAPIKey, os.Getenv("API_KEY")),
 		Version:      rorversion.NewRorVersion("", ""),
 		Role:         "",
 	})
