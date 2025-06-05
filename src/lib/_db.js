@@ -62,7 +62,7 @@ if (DB_SSL) {
 
 // Or you can use it this way
 const config = {
-	connectionString: 'postgresql://acr123:acr123@localhost:5432/acr?sslmode=disable', // 'postgres://john:pass123@localhost:5432/products',
+	connectionString: process.env.DB_URL, // 'postgres://john:pass123@localhost:5432/products',
 	max: 30,
 	ssl
 };

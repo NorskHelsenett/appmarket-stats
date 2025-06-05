@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: acr
+  name: nightly-job
+spec:
+  schedule: '30 0 * * *' # At 00:30 every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: db-sync
+              image: ncr.sky.nhn.no/appmarket-mgmt/acr-sync:alpha
+              imagePullPolicy: Always
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              env:
+                - name: DB_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: acr-initdb-app
+                      key: uri
+                - name: API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: acr-sync-api-key
+                      key: key
+          restartPolicy: OnFailure

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: acr
+  name: acr-ui
+  labels:
+    app: acr-ui
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: acr-ui
+  template:
+    metadata:
+      labels:
+        app: acr-ui
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: acr-ui
+        image: ncr.sky.nhn.no/appmarket-mgmt/acr-ui:alpha
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        env:
+          - name: DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: acr-initdb-app
+                key: uri
+
+

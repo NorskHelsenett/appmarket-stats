@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    dns.nhn.no/override-infrastructure: '{"infrastructure":["helsenett","internett"]}'
+  name: acr-ui-ingress
+  namespace: acr
+spec:
+  ingressClassName: avi-ingress-class-helsenett
+  rules:
+    - host: costreport.appmarket.nhn.no
+      http:
+        paths:
+          - backend:
+              service:
+                name: acr-ui-service
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - costreport.appmarket.nhn.no
+      secretName: acr-ui-tls # tjeneste-tls
+---
+apiVersion: ako.vmware.com/v1alpha1
+kind: HostRule
+metadata:
+  name: acr-ui-hostrule
+  namespace: acr
+spec:
+  virtualhost:
+    fqdn: costreport.appmarket.nhn.no
+    analyticsProfile: NHN-System-Analytics-Profile
+    analyticsPolicy:
+      fullClientLogs:
+        enabled: true
+        throttle: DISABLED
+    datascripts:
+      - expose-nhn-office-devops
+      - expose-nhn-office-client
+      - bottom-deny-rule

@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  namespace: acr
+  name: acr-initdb
+spec:
+  instances: 3
+  bootstrap:
+    initdb:
+      database: acr
+      owner: acr
+  storage:
+    size: 20Gi
+

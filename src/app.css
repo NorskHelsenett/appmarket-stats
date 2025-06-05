@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
 	--color-nhn-50: #015945;
+	--color-nhn-100: #247360;
+	--color-nhn-200: #002920;
+	--color-nhn-primary-50: #7befb2;
+	--color-nhn-gray-50: #808285;
 }
