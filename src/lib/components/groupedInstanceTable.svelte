@@ -4,8 +4,11 @@
 	let collapsed = $state(true);
 </script>
 
-<div class="bg-nhn-50 mt-4 rounded-lg" onclick={() => (collapsed = !collapsed)}>
-	<button class="flex w-full flex-row items-center justify-between pr-4 focus:outline-none">
+<div class="bg-nhn-50 mt-4 rounded-lg">
+	<button
+		class="flex w-full flex-row items-center justify-between pr-4 focus:outline-none"
+		onclick={() => (collapsed = !collapsed)}
+	>
 		<p class="mt-1 mb-1 px-6 py-3 text-sm text-gray-400">{group[0].project_name}</p>
 		<div
 			class="h-4 w-4 fill-gray-400 transition-transform duration-200"
