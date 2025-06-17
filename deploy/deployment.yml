@@ -43,5 +43,11 @@ spec:
               secretKeyRef:
                 name: acr-initdb-app
                 key: uri
+          - name: GITLAB_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: gitlab-secret
+                key: key
+
 
 

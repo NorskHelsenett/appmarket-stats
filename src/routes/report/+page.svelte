@@ -4,26 +4,6 @@
 
 	import { utils, writeFile } from 'xlsx';
 
-	//function exportToExcel() {
-	//	const sheet = [];
-
-	//	// need to add applications to the header. Filter through instances and group applications by name.
-
-	//	sheet.push(['Prosjekt', 'Arbeidsordre', 'Total' /* Apps... */]);
-
-	//	// filter through instances and count the amount of each instance based on the work order
-	//	data.instances.forEach((instance) => sheet.push([instance.project_name, instance.workorder]));
-
-	//	const ws = utils.aoa_to_sheet(sheet);
-
-	//	// Create workbook
-	//	const wb = utils.book_new();
-	//	utils.book_append_sheet(wb, ws, 'Sheet1');
-
-	//	// Export the file
-	//	writeFile(wb, 'Rapport.xlsx');
-	//}
-
 	function exportToExcel() {
 		const sheet = [];
 
@@ -53,19 +33,15 @@
 		});
 
 		// Create header row (added 'Total Price' column)
-		const header = ['Prosjekt', 'Arbeidsordre', 'Total Pris', ...Array.from(allApps).sort()];
+		const header = ['Prosjekt', 'Arbeidsordre', 'Total Pris', ...Array.from(allApps)];
 		sheet.push(header);
 
 		// Add data rows
 		Object.entries(workOrderData).forEach(([workorder, data]) => {
 			const row = [data.projectName, workorder];
-			row.push(data.totalPrice);
-
-			// Calculate total application count
-			const totalApps = Object.values(data.apps).reduce((sum, count) => sum + count, 0);
-			row.push(totalApps);
 
 			// Add total price
+			row.push(data.totalPrice);
 
 			// Add counts for each application (in the same order as header)
 			for (let i = 3; i < header.length; i++) {
