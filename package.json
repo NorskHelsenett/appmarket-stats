@@ -28,6 +28,7 @@
 		"vite": "^6.2.6"
 	},
 	"dependencies": {
+		"@gitbeaker/rest": "^42.5.0",
 		"@popperjs/core": "^2.11.8",
 		"@sveltejs/adapter-node": "^5.2.12",
 		"chart.js": "^2.9.4",

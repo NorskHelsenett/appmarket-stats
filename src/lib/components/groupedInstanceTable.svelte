@@ -25,9 +25,9 @@
 				<thead class="text-xs text-gray-100 uppercase dark:text-gray-400">
 					<tr>
 						<th scope="col" class="px-6 py-3">Applikasjon</th>
-						<th scope="col" class="mb-3 px-6 py-3">Cluster</th>
-						<th scope="col" class="mb-3 px-6 py-3">Arbeidsordre</th>
-						<th scope="col" class="mb-3 px-6 py-3">Fakturerbar</th>
+						<th scope="col" class="mb-3 px-6 py-3">Pris</th>
+						<th scope="col" class="mb-3 px-6 py-3">Antall instanser</th>
+						<th scope="col" class="mb-3 px-6 py-3">Antall Fakturerbare instanser</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -37,11 +37,11 @@
 								scope="row"
 								class="px-6 py-4 font-medium whitespace-nowrap text-gray-900 dark:text-white"
 							>
-								{instance.application_name}
+								{instance.name}
 							</th>
-							<td class="px-6 py-4">{instance.cluster_name}</td>
-							<td class="px-6 py-4">{instance.workorder}</td>
-							<td class="px-6 py-4">{instance.billable ? 'Ja' : 'Nei'}</td>
+							<td class="px-6 py-4">{instance.price} KR</td>
+							<td class="px-6 py-4">{instance.instances}</td>
+							<td class="px-6 py-4">{instance.billable_instances}</td>
 						</tr>
 					{/each}
 				</tbody>
