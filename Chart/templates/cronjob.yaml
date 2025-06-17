@@ -1,0 +1,33 @@
+{{- if .Values.cronjob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.cronjob.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: db-sync
+              image: "{{ .Values.cronjob.image.repository }}:{{ .Values.cronjob.image.tag }}"
+              imagePullPolicy: {{ .Values.cronjob.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              env:
+                - name: DB_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.secrets.database.name }}
+                      key: uri
+                - name: API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.secrets.apiKey.name }}
+                      key: key
+          restartPolicy: {{ .Values.cronjob.restartPolicy }}
+{{- end }}
