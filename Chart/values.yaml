@@ -1,0 +1,125 @@
+# Default values for acr-ui
+replicaCount: 3
+
+image:
+  repository: ncr.sky.nhn.no/appmarket-mgmt/acr-ui
+  pullPolicy: Always
+  tag: "alpha"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+  name: http
+
+ingress:
+  enabled: true
+  className: "avi-ingress-class-helsenett"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    dns.nhn.no/override-infrastructure: '{"infrastructure":["helsenett","internett"]}'
+  hosts:
+    - host: costreport.appmarket.nhn.no
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: acr-ui-tls
+      hosts:
+        - costreport.appmarket.nhn.no
+
+hostRule:
+  enabled: true
+  name: acr-ui-hostrule
+  fqdn: costreport.appmarket.nhn.no
+  analyticsProfile: NHN-System-Analytics-Profile
+  analyticsPolicy:
+    fullClientLogs:
+      enabled: true
+      throttle: DISABLED
+  datascripts:
+    - expose-nhn-office-devops
+    - expose-nhn-office-client
+    - bottom-deny-rule
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Database configuration
+database:
+  enabled: true
+  name: acr-initdb
+  instances: 3
+  database: acr
+  owner: acr
+  storage:
+    size: 20Gi
+
+# Cronjob configuration
+cronjob:
+  enabled: true
+  name: nightly-job
+  schedule: "30 0 * * *"
+  image:
+    repository: ncr.sky.nhn.no/appmarket-mgmt/acr-sync
+    tag: "alpha"
+    pullPolicy: Always
+  restartPolicy: OnFailure
+
+# Environment variables
+env:
+  - name: DB_URL
+    valueFrom:
+      secretKeyRef:
+        name: acr-initdb-app
+        key: uri
+
+# Secrets
+secrets:
+  database:
+    name: acr-initdb-app
+    create: false
+  apiKey:
+    name: acr-sync-api-key
+    create: false
+
+# Namespace
+namespace: acr
