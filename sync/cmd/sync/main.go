@@ -2,20 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 
 	sync "app-market-cost-report-sync"
 
-	"github.com/NorskHelsenett/ror/pkg/apicontracts/apiresourcecontracts"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport/httpauthprovider"
-	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport/httpclient"
-	"github.com/NorskHelsenett/ror/pkg/config/rorversion"
+	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/v2/transports/resttransport/httpclient"
 	"github.com/NorskHelsenett/ror/pkg/models/aclmodels"
 	"github.com/NorskHelsenett/ror/pkg/models/aclmodels/rorresourceowner"
 	"github.com/NorskHelsenett/ror/pkg/rorresources"
@@ -41,7 +36,9 @@ type appResult struct {
 	billable bool
 }
 
-func NewAppMarketSync(apiVersion string) (*AppMarketSync, error) {
+
+
+func NewAppMarketSync() (*AppMarketSync, error) {
 	db, err := sync.OpenDatabase()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -53,8 +50,8 @@ func NewAppMarketSync(apiVersion string) (*AppMarketSync, error) {
 
 	transport := resttransport.NewRorHttpTransport(&httpclient.HttpTransportClientConfig{
 		BaseURL:      "https://api.ror.nhn.no",
+		//BaseURL:      "http://localhost:10000",
 		AuthProvider: httpauthprovider.NewAuthProvider(httpauthprovider.AuthPoviderTypeAPIKey, os.Getenv("API_KEY")),
-		Version:      rorversion.NewRorVersion("", ""),
 		Role:         "",
 	})
 
@@ -66,7 +63,7 @@ func NewAppMarketSync(apiVersion string) (*AppMarketSync, error) {
 			instances:    []*sync.Instance{},
 			clusters:     []*sync.Cluster{},
 		},
-		apiVersion: apiVersion,
+		apiVersion: "v2",
 	}, nil
 }
 
@@ -105,76 +102,51 @@ func (s *AppMarketSync) syncExistingData() error {
 }
 
 func (s *AppMarketSync) fetchClusters() error {
-	unmapped, err := s.client.Clusters().GetAll()
+
+	ctx := context.Background()
+
+	fmt.Print("fetchClusters ? ")
+const pageSize = 100
+
+	var clusters []*sync.Cluster
+offset := 0
+
+for {
+query := rorresources.ResourceQuery{
+    VersionKind: schema.GroupVersionKind{
+ 
+        Kind:    "KubernetesCluster",
+    },
+    Limit: pageSize,
+	Offset: offset,
+}
+
+	unmapped, err := s.client.ResourcesV2().Get(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	clusters := make([]*sync.Cluster, len(*unmapped))
-	for i, u := range *unmapped {
-		name := "undefined"
-		if u.Metadata.Project != nil {
-			name = u.Metadata.Project.Name
+
+		for _, u := range unmapped.Resources {
+			clusters = append(clusters, &sync.Cluster{
+				ID:   string(u.Metadata.UID),
+				Name: u.Metadata.Name,
+			})
 		}
 
-		clusters[i] = &sync.Cluster{
-			ID:          u.ClusterId,
-			Name:        u.ClusterName,
-			Workorder:   u.Metadata.Billing.Workorder,
-			ProjectId:   u.Metadata.ProjectID,
-			ProjectName: name,
+		if len(unmapped.Resources) < pageSize {
+			break
 		}
-	}
-
+		offset += pageSize
+}
 	s.state.clusters = clusters
 	return nil
 }
 
+
 func (s *AppMarketSync) fetchInstances() error {
-	var err error
-	switch s.apiVersion {
-	case "v1":
-		err = s.fetchInstancesV1()
-	case "v2":
-		err = s.fetchInstancesV2()
-	default:
-		return fmt.Errorf("unsupported API version: %s", s.apiVersion)
-	}
-	return err
-}
-
-func (s *AppMarketSync) fetchInstancesV1() error {
 	for _, cluster := range s.state.clusters {
-		apps, err := s.getApplicationsV1(cluster.ID)
-		if err != nil {
-			return err
-		}
-
-		for _, appRes := range apps {
-			trimmed := strings.ReplaceAll(appRes.name, " ", "")
-			app, ok := s.state.applications[trimmed]
-			if !ok {
-				app = &sync.Application{
-					ID:   uuid.NewString(),
-					Name: trimmed,
-				}
-				s.state.applications[trimmed] = app
-			}
-
-			s.state.instances = append(s.state.instances, &sync.Instance{
-				ID:            uuid.NewString(),
-				ApplicationID: app.ID,
-				ClusterID:     cluster.ID,
-				Billable:      appRes.billable,
-			})
-		}
-	}
-	return nil
-}
-
-func (s *AppMarketSync) fetchInstancesV2() error {
-	for _, cluster := range s.state.clusters {
-		apps, err := s.getApplicationsV2(cluster.ID)
+		apps, err := s.getApplications(cluster.ID)
 		if err != nil {
 			return err
 		}
@@ -200,46 +172,9 @@ func (s *AppMarketSync) fetchInstancesV2() error {
 	return nil
 }
 
-func (s *AppMarketSync) getApplicationsV1(clusterID string) ([]appResult, error) {
-	req, err := http.NewRequest(
-		"GET",
-		fmt.Sprintf("https://api.ror.nhn.no/v1/resources?ownerScope=cluster&ownerSubject=%s&apiversion=argoproj.io/v1alpha1&kind=Application", clusterID),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
 
-	req.Header.Add("X-API-KEY", os.Getenv("API_KEY"))
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var apps []apiresourcecontracts.ResourceApplication
-	if err := json.NewDecoder(resp.Body).Decode(&apps); err != nil {
-		return nil, err
-	}
-
-	results := []appResult{}
-	for _, app := range apps {
-		if app.Metadata.Labels["argocd.argoproj.io/instance"] != "nhn-appmarket" {
-			continue
-		}
-
-		results = append(results, appResult{
-			name:     app.Metadata.Annotations["appmarket.nhn.no/application"],
-			billable: app.Metadata.Labels["billable"] == "true",
-		})
-	}
-
-	return results, nil
-}
-
-func (s *AppMarketSync) getApplicationsV2(clusterID string) ([]appResult, error) {
-	apps, err := s.client.ResourceV2().Get(context.Background(), rorresources.ResourceQuery{
+func (s *AppMarketSync) getApplications(clusterID string) ([]appResult, error) {
+	apps, err := s.client.ResourcesV2().Get(context.Background(), rorresources.ResourceQuery{
 		VersionKind: schema.GroupVersionKind{
 			Group:   "",
 			Version: "argoproj.io/v1alpha1",
@@ -251,24 +186,21 @@ func (s *AppMarketSync) getApplicationsV2(clusterID string) ([]appResult, error)
 				Subject: aclmodels.Acl2Subject(clusterID),
 			},
 		},
-	})
-
+	},
+)
 	if err != nil {
 		return nil, err
 	}
-
 	results := []appResult{}
 	for _, app := range apps.Resources {
-		if app.Metadata.Labels["argocd.argoproj.io/instance"] != "nhn-appmarket" {
-			continue
-		}
-
+	if _, ok := app.Metadata.Annotations["appmarket.nhn.no/application"]; !ok {
+    continue
+}
 		results = append(results, appResult{
 			name:     app.Metadata.Annotations["appmarket.nhn.no/application"],
 			billable: app.Metadata.Labels["billable"] == "true",
 		})
 	}
-
 	return results, nil
 }
 
@@ -276,7 +208,6 @@ func (s *AppMarketSync) persistData() error {
 	if err := s.db.PersistClusters(s.state.clusters); err != nil {
 		return err
 	}
-
 	if err := s.db.PersistApplications(s.state.applications); err != nil {
 		return err
 	}
@@ -287,7 +218,7 @@ func (s *AppMarketSync) persistData() error {
 func main() {
 	fmt.Println("api key", os.Getenv("API_KEY"))
 
-	sync, err := NewAppMarketSync("v1") // or "v2" depending on which API version you want to use
+	sync, err := NewAppMarketSync()
 	if err != nil {
 		panic(err)
 	}

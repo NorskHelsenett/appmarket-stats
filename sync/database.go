@@ -39,6 +39,7 @@ type Database struct {
 
 func OpenDatabase() (*Database, error) {
 	dsn := os.Getenv("DB_URL")
+	fmt.Print("Got DB URL ? ", dsn)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	return &Database{db}, err
 }
