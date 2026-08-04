@@ -1,9 +1,9 @@
 import { getInstances } from '$lib/api';
 
-export const load = async ({ locals }) => {
+export const load = async ({ locals }: any) => {
 	try {
 		const instances = await getInstances();
-		const cards = instances.reduce((r, a) => {
+		const cards = instances.reduce((r: any, a: any) => {
 			r[a.application_name] = r[a.application_name] || [];
 			r[a.application_name].push(a);
 			return r;

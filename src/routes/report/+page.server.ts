@@ -1,6 +1,6 @@
 import { getInstances } from '$lib/api';
 
-export const load = async ({ locals }) => {
+export const load = async ({ locals }: any) => {
 	try {
 		const instances = await getInstances();
 		return {

@@ -1,12 +1,17 @@
 import pgPromise from 'pg-promise';
+import { env } from '$env/dynamic/private';
+
+interface DbGlobal {
+  [DB_KEY]?: ReturnType<typeof pgp>;
+}
 
 const pgOptions = {
-	receive: (data /*, result, e*/) => {
+	receive: (data: any /*, result, e*/) => {
 		camelizeColumns(data);
 	}
 };
 
-const camelizeColumns = (data) => {
+const camelizeColumns = (data: any) => {
 	const template = data[0];
 	for (const prop in template) {
 		const camel = pgPromise.utils.camelize(prop);
@@ -20,8 +25,8 @@ const camelizeColumns = (data) => {
 	}
 };
 
-const DB_SSL = import.meta.env.VITE_DB_SSL;
-const DB_URL = import.meta.env.VITE_DB_URL;
+const DB_SSL = env.VITE_DB_SSL;
+const DB_URL = env.VITE_DB_URL;
 
 const pgp = pgPromise(pgOptions);
 
@@ -55,33 +60,24 @@ types.setTypeParser(types.builtins.DATE, function (val) {
 // Avoid self-signed ssl errors (with DigitalOcean) as described here
 // https://www.javaniceday.com/post/pg-promise-self-signed-certificate-error-in-postgres
 
-let ssl = null;
-if (DB_SSL) {
-	ssl = { rejectUnauthorized: false };
-}
-
 // Or you can use it this way
 const config = {
-	connectionString: process.env.DB_URL, // 'postgres://john:pass123@localhost:5432/products',
+	connectionString: env.DB_URL, // 'postgres://john:pass123@localhost:5432/products',
 	max: 30,
-	ssl
+	ssl: DB_SSL ? true : false
 };
 
 // Use a symbol to store a global instance of a connection, and to access it from the singleton.
 const DB_KEY = Symbol.for('Ken.db');
-const globalSymbols = Object.getOwnPropertySymbols(global);
-const hasDb = globalSymbols.indexOf(DB_KEY) > -1;
-if (!hasDb) {
-	global[DB_KEY] = pgp(config);
+const g = globalThis as unknown as DbGlobal;
+if (g[DB_KEY] === undefined) {
+  g[DB_KEY] = pgp(config);
 }
-
-// Create and freeze the singleton object so that it has an instance property.
-const singleton = {};
-Object.defineProperty(singleton, 'instance', {
-	get: function () {
-		return global[DB_KEY];
-	}
-});
+const singleton = {
+  get instance() {
+    return g[DB_KEY]!;
+  }
+};
 Object.freeze(singleton);
 
 export default singleton;

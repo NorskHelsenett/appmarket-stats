@@ -1,4 +1,4 @@
-export function getDaysInMonth(month, year) {
+export function getDaysInMonth(month: any, year: any) {
 	// Convert month name to index (0 for January, 11 for December)
 	const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
 

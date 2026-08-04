@@ -17,7 +17,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: db-sync
-              image: ncr.sky.nhn.no/appmarket-mgmt/acr-sync:alpha
+              image: ncr.sky.nhn.no/appmarket-mgmt/acr-sync:2.0
               imagePullPolicy: Always
               securityContext:
                 allowPrivilegeEscalation: false

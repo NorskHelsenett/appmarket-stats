@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/d-j/go/pkg/mod/github.com/\\\\!norsk\\\\!helsenett/ror@v1.1.4 -type f -name \"httpclient.go\" -o -name \"httpclient*\" -type f)",
+      "Read(//Users/d-j/go/pkg/mod/github.com/!norsk!helsenett/ror@v1.1.4/**)"
+    ]
+  }
+}

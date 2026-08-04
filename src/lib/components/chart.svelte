@@ -1,5 +1,5 @@
 <script>
-	import chartjs from 'chart.js';
+	import chartjs from 'chart.js/auto';
 	import { onMount } from 'svelte';
 	import { getYearAndMonth, getElapsedDaysInCurrentMonth } from '$lib/utils';
 

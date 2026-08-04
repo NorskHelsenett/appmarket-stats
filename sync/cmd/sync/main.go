@@ -216,8 +216,6 @@ func (s *AppMarketSync) persistData() error {
 }
 
 func main() {
-	fmt.Println("api key", os.Getenv("API_KEY"))
-
 	sync, err := NewAppMarketSync()
 	if err != nil {
 		panic(err)

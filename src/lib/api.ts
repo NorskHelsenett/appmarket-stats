@@ -5,8 +5,13 @@ import { getPriceList } from './gitlab';
 const db = _db.instance;
 
 export async function getInstances() {
+  let result: any;
+  console.log("Print: ABC ")
+
 	const priceList = await getPriceList();
-	const result = await db.query(`
+  console.log("Print: AB222C ")
+try {
+	 result = await db.query(`
     SELECT DISTINCT ON (i.application_id, i.cluster_id)
         i.id AS instance_id,
         i.application_id,
@@ -27,14 +32,19 @@ export async function getInstances() {
     ORDER BY
         i.application_id, i.cluster_id, i.created_at DESC;
   `);
-
-	return result.map((i) => {
+  } catch (err) {
+console.error('DB query failed: ', err);
+    throw err;
+  }
+console.log("Print: ABC ")
+return result.map((i: any) => {
 		i.price = priceList.get(i.application_name);
 		return i;
 	});
-}
+  }
 
-export async function getApplicationTimeseries(month, days, application_id, billable) {
+export async function getApplicationTimeseries(month: any, days: any, application_id: any, billable: any) {
+  try {
 	const startDate = `${month}-01`;
 
 	const query = `
@@ -67,15 +77,23 @@ ORDER BY date_series.day;
 	const values = [startDate, application_id, billable];
 	const result = await db.any(query, values);
 	return result;
+} catch (error) {
+    console.error('Error fetching application timeseries:', error);
+    throw error;}
 }
 
-export async function getApplicationById(id) {
+export async function getApplicationById(id: any) {
+  try {
 	const query = `SELECT * FROM applications WHERE id = $1`;
 	const result = await db.any(query, [id]);
 	return result;
+  } catch (error) {
+    console.error('Error fetching application by ID:', error);
+    throw error;}
 }
 
-export async function getTotalUsageTimeseries(month, days) {
+export async function getTotalUsageTimeseries(month: any, days: any) {
+  try {
 	const startDate = `${month}-01`;
 
 	const query = `
@@ -119,4 +137,7 @@ ORDER BY day;
 	const values = [days];
 	const result = await db.any(query, values);
 	return result;
+} catch (error) {
+    console.error('Error fetching total usage timeseries:', error);
+    throw error;}
 }
