@@ -105,7 +105,6 @@ func (s *AppMarketSync) fetchClusters() error {
 
 	ctx := context.Background()
 
-	fmt.Print("fetchClusters ? ")
 const pageSize = 100
 
 	var clusters []*sync.Cluster

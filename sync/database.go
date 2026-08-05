@@ -24,8 +24,8 @@ type Cluster struct {
 
 type Instance struct {
 	ID            string `gorm:"primaryKey"` // Remove if you don't need this
-	ApplicationID string `gorm:"primaryKey"`
-	ClusterID     string `gorm:"primaryKey"`
+	ApplicationID string `gorm:"primaryKey;index:idx_instances_cluster_application,priority:2"`
+	ClusterID     string `gorm:"primaryKey;index:idx_instances_cluster_application,priority:1"`
 	CreatedAt     time.Time
 	Billable      bool
 

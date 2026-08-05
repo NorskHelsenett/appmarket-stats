@@ -6,10 +6,8 @@ const db = _db.instance;
 
 export async function getInstances() {
   let result: any;
-  console.log("Print: ABC ")
 
 	const priceList = await getPriceList();
-  console.log("Print: AB222C ")
 try {
 	 result = await db.query(`
     SELECT DISTINCT ON (i.application_id, i.cluster_id)
@@ -36,7 +34,6 @@ try {
 console.error('DB query failed: ', err);
     throw err;
   }
-console.log("Print: ABC ")
 return result.map((i: any) => {
 		i.price = priceList.get(i.application_name);
 		return i;
