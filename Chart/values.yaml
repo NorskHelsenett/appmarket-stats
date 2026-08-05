@@ -43,7 +43,7 @@ ingress:
   enabled: true
   className: "avi-ingress-class-helsenett"
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: internpki
     dns.nhn.no/override-infrastructure: '{"infrastructure":["helsenett","internett"]}'
   hosts:
     - host: costreport.appmarket.nhn.no
