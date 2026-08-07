@@ -12,6 +12,7 @@ import (
 type Application struct {
 	ID   string `gorm:"primaryKey"`
 	Name string
+    SyncID        int64 `gorm:"not null;default:0;index"`
 }
 
 type Cluster struct {
@@ -20,6 +21,7 @@ type Cluster struct {
 	Workorder   string
 	ProjectId   string
 	ProjectName string
+    SyncID        int64 `gorm:"not null;default:0;index"`
 }
 
 type Instance struct {
@@ -28,7 +30,7 @@ type Instance struct {
 	ClusterID     string `gorm:"primaryKey;index:idx_instances_cluster_application,priority:1"`
 	CreatedAt     time.Time
 	Billable      bool
-
+	SyncID        int64 `gorm:"not null;default:0;index"`
 	Application Application `gorm:"foreignKey:ApplicationID;references:ID;constraint:OnDelete:CASCADE"`
 	Cluster     Cluster     `gorm:"foreignKey:ClusterID;references:ID;constraint:OnDelete:CASCADE"`
 }
@@ -48,7 +50,8 @@ func (d *Database) Automigrate() error {
 	return d.driver.AutoMigrate(&Application{}, &Cluster{}, &Instance{})
 }
 
-func (d *Database) PersistClusters(clusters []*Cluster) error {
+func (d *Database) PersistClusters(clusters []*Cluster, syncID int64) error {
+
 	for _, cluster := range clusters {
 		old := new(Cluster)
 		if tx := d.driver.First(old, "id = ?", cluster.ID); tx.Error != nil {
@@ -63,6 +66,7 @@ func (d *Database) PersistClusters(clusters []*Cluster) error {
 				continue
 			}
 		}
+		cluster.SyncID = syncID
 
 		if tx := d.driver.Save(cluster); tx.Error != nil {
 			fmt.Printf("failed to update cluster: %v\n", tx.Error)
@@ -74,7 +78,8 @@ func (d *Database) PersistClusters(clusters []*Cluster) error {
 	return nil
 }
 
-func (d *Database) PersistApplications(apps map[string]*Application) error {
+func (d *Database) PersistApplications(apps map[string]*Application, syncID int64) error {
+
 	for _, app := range apps {
 		old := new(Application)
 		if tx := d.driver.First(old, "name = ?", app.Name); tx.Error != nil {
@@ -89,6 +94,7 @@ func (d *Database) PersistApplications(apps map[string]*Application) error {
 				continue
 			}
 		}
+		app.SyncID = syncID
 
 		if tx := d.driver.Save(app); tx.Error != nil {
 			fmt.Printf("failed to update app: %v\n", tx.Error)
@@ -99,8 +105,10 @@ func (d *Database) PersistApplications(apps map[string]*Application) error {
 	return nil
 }
 
-func (d *Database) PersistInstances(instances []*Instance) error {
+func (d *Database) PersistInstances(instances []*Instance, syncID int64) error {
+
 	for _, instance := range instances {
+		instance.SyncID = syncID
 		result := d.driver.Create(instance)
 		if err := result.Error; err != nil {
 			fmt.Printf("failed to insert instance: %v\n", err)

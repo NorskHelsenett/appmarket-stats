@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	sync "app-market-cost-report-sync"
 
@@ -204,14 +205,16 @@ func (s *AppMarketSync) getApplications(clusterID string) ([]appResult, error) {
 }
 
 func (s *AppMarketSync) persistData() error {
-	if err := s.db.PersistClusters(s.state.clusters); err != nil {
+				syncID := time.Now().UnixNano()
+
+	if err := s.db.PersistClusters(s.state.clusters, syncID); err != nil {
 		return err
 	}
-	if err := s.db.PersistApplications(s.state.applications); err != nil {
+	if err := s.db.PersistApplications(s.state.applications, syncID); err != nil {
 		return err
 	}
 
-	return s.db.PersistInstances(s.state.instances)
+	return s.db.PersistInstances(s.state.instances, syncID)
 }
 
 func main() {
