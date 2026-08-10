@@ -1,0 +1,23 @@
+export interface App {
+  id: number;
+  name: string;
+  instance_count: number;
+}
+
+export interface Cluster {
+  id: number;
+  name: string;
+}
+
+export interface Instance {
+  id: number;
+  application_id: string;
+  cluster_id: string;
+  billable: boolean;
+}
+
+export interface AppInstall {
+  app: string;
+  installs: number;
+  cluster_id: string
+}
