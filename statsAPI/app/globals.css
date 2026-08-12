@@ -1,0 +1,14 @@
+/* app/globals.css or styles/globals.css */
+@import "tailwindcss";
+
+@theme {
+  --color-brand-header: #015945;   /* Mørk grønn primær */
+  --color-brand-body: #002920;     /* Grønn 1 */
+  --color-brand-stripe: #F7F5F4;   /* Varm grå */
+  --color-brand-highlight: #C4F2DA; /* Grønn 4 */
+  --color-brand-line: #DCDDDE;     /* Grå 3 */
+  --color-brand-track: #DCDDDE;    /* assumed — see note below */
+  --color-brand-fill: #015945;     /* assumed — see note below */
+
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}

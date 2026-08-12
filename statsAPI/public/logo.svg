@@ -1,0 +1,39 @@
+<svg viewBox="20 30 1010 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path id="star" d="M0,-14 L4,-4 L14,0 L4,4 L0,14 L-4,4 L-14,0 L-4,-4 Z" />
+  </defs>
+
+  <!-- main mark: A + M monogram, same rounded-ribbon style as the original mark -->
+  <g transform="translate(50,80)" stroke="#015945" fill="none" stroke-width="42" stroke-linecap="round" stroke-linejoin="round">
+    <!-- A -->
+    <path d="M60,240 L150,60 L240,240" />
+    <path d="M95,170 L205,170" />
+    <!-- M -->
+    <path d="M270,240 L310,60 L350,150 L390,60 L430,240" />
+  </g>
+
+  <!-- light confetti touch -->
+  <use href="#star" x="480" y="55" fill="#C4F2DA" transform="rotate(-8 480 55) scale(0.6)" />
+  <use href="#star" x="1000" y="90" fill="#015945" transform="rotate(10 1000 90) scale(0.65)" />
+  <circle cx="45" cy="440" r="6" fill="#DCDDDE" />
+  <circle cx="1010" cy="340" r="7" fill="#C4F2DA" opacity="0.8" />
+
+  <!-- wordmark shadow (soft offset duplicate) -->
+  <text x="524" y="216" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="88" font-weight="800" fill="#C4F2DA" opacity="0.8">AppMarket</text>
+
+  <!-- wordmark, gentle wave per-letter -->
+  <g font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="88" font-weight="800" fill="#015945">
+    <text x="520" y="206" rotate="-2">A</text>
+    <text x="584" y="202" rotate="2">p</text>
+    <text x="632" y="210" rotate="-2">p</text>
+    <text x="680" y="200" rotate="1">M</text>
+    <text x="752" y="208" rotate="-2">a</text>
+    <text x="808" y="202" rotate="2">r</text>
+    <text x="848" y="209" rotate="-1">k</text>
+    <text x="896" y="201" rotate="2">e</text>
+    <text x="940" y="207" rotate="-2">t</text>
+  </g>
+
+  <!-- subtitle -->
+  <text x="520" y="260" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="26" font-weight="500" fill="#1a1a1a">Markedsplass for apper</text>
+</svg>

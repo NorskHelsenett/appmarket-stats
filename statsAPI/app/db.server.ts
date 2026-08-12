@@ -5,8 +5,6 @@ dotenv.config();
 declare global {
   var __pgPool: Pool | undefined;
 }
-  console.log("Found DB_URL:", process.env.DB_URL);
-
 // Avoids creating a new pool on every hot-reload in dev
 const pool =
   global.__pgPool ??

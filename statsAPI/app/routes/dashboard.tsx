@@ -11,7 +11,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader() {
   const appInstalls = await pool.query<Globals.App>(`
     WITH latest_sync AS (
       SELECT MAX(sync_id) AS sync_id FROM instances
@@ -38,13 +38,8 @@ WHERE sync_id = (SELECT MAX(sync_id) FROM applications);
 }
 
 export default function Home() {
-    const { applications, clusters, appInstalls } = useLoaderData<typeof loader>();
-  console.log("AppInstalls: ", appInstalls);
+    const { appInstalls } = useLoaderData<typeof loader>();
     return (
-    <div>
-      <h1>Current distribution</h1>
-      Click each app to see the clusters where it is installed.
       <AppInstallsTable appInstalls={appInstalls} />
-    </div>
   );
 }

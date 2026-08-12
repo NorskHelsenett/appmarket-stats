@@ -7,6 +7,8 @@ export interface App {
 export interface Cluster {
   id: number;
   name: string;
+  environment: string;
+  workspace: string;
 }
 
 export interface Instance {
