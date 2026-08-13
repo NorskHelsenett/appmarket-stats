@@ -40,6 +40,8 @@ WHERE sync_id = (SELECT MAX(sync_id) FROM applications);
 export default function Home() {
     const { appInstalls } = useLoaderData<typeof loader>();
     return (
+      <div className="w-full max-w-[960px] mx-auto">
       <AppInstallsTable appInstalls={appInstalls} />
+      </div>
   );
 }

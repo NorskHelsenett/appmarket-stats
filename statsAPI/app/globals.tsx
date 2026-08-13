@@ -21,5 +21,4 @@ export interface Instance {
 export interface AppInstall {
   app: string;
   installs: number;
-  cluster_id: string
 }

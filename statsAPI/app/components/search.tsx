@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 
 export function useTableSearch<T>(rows: T[], columns: (keyof T)[]) {
   const [query, setQuery] = useState("");
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return rows;

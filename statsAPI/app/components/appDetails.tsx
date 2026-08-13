@@ -6,7 +6,7 @@ import { useSortableRows, SortableHeader } from "./sorter";
 import { TableSearch, useTableSearch } from "./search";
 
 export async function loader({ params }: Route.LoaderArgs) {
-const appInstalls = await pool.query<Globals.AppInstall>(
+const appInstalls = await pool.query<Globals.Instance>(
     "SELECT * FROM instances WHERE application_id = $1 AND sync_id = (SELECT MAX(sync_id) FROM applications);",
   [params.id]
     );
@@ -32,10 +32,8 @@ export default function AppDetails({ loaderData }: Route.ComponentProps) {
     "environment",
   ]);
   return (
-   <div>
-
+   <div className="w-full max-w-[960px] mx-auto">
      <div className="w-full max-w-[960px]">
-
       <header className="flex items-center gap-4 rounded-lg bg-brand-header px-6 py-5 shadow-[0_1px_3px_rgba(0,41,32,0.08)]">
         <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/15 text-lg font-semibold text-white">
           {app.name.charAt(0).toUpperCase()}
@@ -49,7 +47,6 @@ export default function AppDetails({ loaderData }: Route.ComponentProps) {
             {app.name}
           </h1>
         </div>
-
         {typeof clusters.length === "number" && (
           <span className="ml-auto flex-none rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-white">
             {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}
@@ -65,7 +62,6 @@ export default function AppDetails({ loaderData }: Route.ComponentProps) {
       </Link>
     </div>
              <TableSearch value={query} onChange={setQuery} placeholder="Search..." />
-
    <table className="w-full max-w-[960px] mx-auto table-fixed border-collapse text-sm text-brand-body font-sans shadow-[0_1px_3px_rgba(0,41,32,0.08)] rounded-lg overflow-hidden">
   <colgroup>
     <col className="w-1/2" />

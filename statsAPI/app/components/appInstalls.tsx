@@ -51,7 +51,7 @@ export default function AppInstallsTable({ appInstalls }: AppInstalls) {
         className={`${i % 2 === 1 ? "bg-brand-stripe" : "bg-white"} hover:bg-brand-highlight border-b border-brand-line transition-colors duration-150`}
       >
         <td className="py-2.5 px-4 font-medium">
-          <Link to={`app/${row.id}`} className="text-brand-body no-underline">
+          <Link to={`${row.id}`} className="text-brand-body no-underline">
             {row.name}
           </Link>
         </td>

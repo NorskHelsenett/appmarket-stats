@@ -6,21 +6,14 @@ const usefulLinks = [
   { label: "Dokumentasjon", href: "https://docs.sky.nhn.no/k8s/brukerdokumentasjon/appmarket/index.html", description: "Kom i gang og se hvordan AppMarket fungerer." },
   { label: "Brukerstøtte", href: "https://norskhelsenett.slack.com/archives/C06JVT4LUCV", description: "Få hjelp eller meld inn en feil." },
   { label: "Kildekode", href: "https://helsegitlab.nhn.no/apps/appmarket", description: "AppMarket Repository." },
-    { label: "Kildekode", href: "https://helsegitlab.nhn.no/appmarket/usagegui", description: "Repository for denne siden." },
-
-];
-
-const syncJobs = [
-  { dataset: "Apper, clustere og instances", source: "ROR-API", frequency: "Hver natt" }
+  { label: "Kildekode", href: "https://helsegitlab.nhn.no/appmarket/usagegui", description: "Repository for denne siden." },
 ];
 
 function formatSyncTime(nanoseconds: string | number | null): string {
   if (!nanoseconds) return "Ukjent";
-
-  const ns = BigInt(nanoseconds);       // safe: still full precision
-  const ms = ns / 1_000_000n;           // ns -> ms, integer division
-  const date = new Date(Number(ms));    // safe now: ms fits in a normal Number
-
+  const ns = BigInt(nanoseconds);
+  const ms = ns / 1_000_000n;
+  const date = new Date(Number(ms));
   return date.toLocaleString("nb-NO", { dateStyle: "short", timeStyle: "medium" });
 }
 
@@ -103,17 +96,15 @@ Denne siden og tilhørende støttekomponenter kjører i d-app-001-trd1-app.sky.n
             </tr>
           </thead>
           <tbody>
-            {syncJobs.map((job, i) => (
               <tr
-                key={job.dataset}
-                className={`${i % 2 === 1 ? "bg-brand-stripe" : "bg-white"} border-b border-brand-line`}
+                className={`border-b border-brand-line`}
               >
-                <td className="py-2.5 px-4 font-medium">{job.dataset}</td>
-                <td className="py-2.5 px-4">{job.source}</td>
-                <td className="py-2.5 px-4">{job.frequency}</td>
+                <td className="py-2.5 px-4 font-medium">Apper, clustere og instances</td>
+                <td className="py-2.5 px-4">ROR-API</td>
+                <td className="py-2.5 px-4">Hver natt</td>
                 <td className="py-2.5 px-4 tabular-nums">{formatSyncTime(lastRun)}</td>
               </tr>
-            ))}
+            
           </tbody>
         </table>
         <p className="mt-2 text-xs text-brand-body/60">
