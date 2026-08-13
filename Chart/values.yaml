@@ -46,19 +46,19 @@ ingress:
     cert-manager.io/cluster-issuer: internpki
     dns.nhn.no/override-infrastructure: '{"infrastructure":["helsenett","internett"]}'
   hosts:
-    - host: costreport.appmarket.nhn.no
+    - host: stats.appmarket.nhn.no
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: acr-ui-tls
       hosts:
-        - costreport.appmarket.nhn.no
+        - stats.appmarket.nhn.no
 
 hostRule:
   enabled: true
   name: acr-ui-hostrule
-  fqdn: costreport.appmarket.nhn.no
+  fqdn: stats.appmarket.nhn.no
   analyticsProfile: NHN-System-Analytics-Profile
   analyticsPolicy:
     fullClientLogs:

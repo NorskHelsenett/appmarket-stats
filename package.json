@@ -19,9 +19,10 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@tanstack/react-table": "^9.0.0",
 		"chart.js": "^4.5.1",
 		"pg-promise": "^12.6.2",
+		"react": "^19.2.8",
 		"xlsx": "^0.18.5"
 	}
-	
 }

@@ -114,7 +114,6 @@ offset := 0
 for {
 query := rorresources.ResourceQuery{
     VersionKind: schema.GroupVersionKind{
- 
         Kind:    "KubernetesCluster",
     },
     Limit: pageSize,
@@ -126,11 +125,12 @@ query := rorresources.ResourceQuery{
 		return err
 	}
 
-
 		for _, u := range unmapped.Resources {
 			clusters = append(clusters, &sync.Cluster{
 				ID:   string(u.Metadata.UID),
 				Name: u.Metadata.Name,
+				Environment: u.KubernetesClusterResource.Status.AgentStatus.Environment,
+				Workspace: u.KubernetesClusterResource.Status.AgentStatus.Workspace,
 			})
 		}
 
