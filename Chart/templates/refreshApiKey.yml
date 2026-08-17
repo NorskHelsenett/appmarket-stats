@@ -106,6 +106,8 @@ spec:
               image: alpine/k8s:1.30.2 # bundles kubectl, curl and jq
               command: ["sh", "/scripts/refresh.sh"]
               securityContext:
+                runAsUser: 65532
+                runAsGroup: 65532
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop:
