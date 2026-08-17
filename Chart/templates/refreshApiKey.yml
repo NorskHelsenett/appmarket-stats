@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: refresh-api-key-sa
+  namespace: acr
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: refresh-api-key-role
+  namespace: acr
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["acr-sync-api-key"]
+    verbs: ["get", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: refresh-api-key-rolebinding
+  namespace: acr
+subjects:
+  - kind: ServiceAccount
+    name: refresh-api-key-sa
+    namespace: acr
+roleRef:
+  kind: Role
+  name: refresh-api-key-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: refresh-api-key-script
+  namespace: acr
+data:
+  refresh.sh: |
+    #!/bin/sh
+    set -eu
+
+    NAMESPACE="${NAMESPACE:?NAMESPACE not set}"
+    SECRET_NAME="${SECRET_NAME:?SECRET_NAME not set}"
+    SECRET_KEY="${SECRET_KEY:-api-key}"
+    REFRESH_URL="${REFRESH_URL:-https://myapi/newkey}"
+    JSON_FIELD="${JSON_FIELD:-api_key}"
+
+    echo "Fetching current key from secret '${SECRET_NAME}' in namespace '${NAMESPACE}'..."
+    CURRENT_KEY=$(kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" \
+      -o jsonpath="{.data.${SECRET_KEY}}" | base64 -d)
+
+    if [ -z "${CURRENT_KEY}" ]; then
+      echo "ERROR: could not read current key from secret '${SECRET_NAME}' (key '${SECRET_KEY}')." >&2
+      exit 1
+    fi
+
+    echo "Requesting new key from ${REFRESH_URL}..."
+    RESPONSE=$(curl -sS -f -X POST "${REFRESH_URL}" \
+      -H "Authorization: Bearer ${CURRENT_KEY}" \
+      -H "Content-Type: application/json")
+
+    NEW_KEY=$(printf '%s' "${RESPONSE}" | jq -r ".${JSON_FIELD} // empty")
+
+    if [ -z "${NEW_KEY}" ]; then
+      echo "ERROR: response did not contain a usable key under field '${JSON_FIELD}'." >&2
+      echo "Top-level fields in the response were: $(printf '%s' "${RESPONSE}" | jq -c 'keys' 2>/dev/null || echo 'unparseable JSON')" >&2
+      exit 1
+    fi
+
+    NEW_KEY_B64=$(printf '%s' "${NEW_KEY}" | base64 | tr -d '\n')
+
+    echo "Patching secret '${SECRET_NAME}' with the new key..."
+    kubectl patch secret "${SECRET_NAME}" -n "${NAMESPACE}" \
+      --type=json \
+      -p="[{\"op\": \"replace\", \"path\": \"/data/${SECRET_KEY}\", \"value\": \"${NEW_KEY_B64}\"}]"
+
+    echo "Done. Secret '${SECRET_NAME}' updated in namespace '${NAMESPACE}'."
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: refresh-api-key
+  namespace: acr
+spec:
+  # Runs at 03:00 on the 1st of January, April, July and October (quarterly).
+  schedule: "0 3 1 1,4,7,10 *"
+  timeZone: "Europe/Oslo" # requires Kubernetes 1.27+; drop this field and
+                          # convert the schedule to UTC on older clusters
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: refresh-api-key-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: refresh-api-key
+              image: alpine/k8s:1.30.2 # bundles kubectl, curl and jq
+              command: ["sh", "/scripts/refresh.sh"]
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: SECRET_NAME
+                  value: "acr-sync-api-key"
+                - name: SECRET_KEY
+                  value: "key" # <<< confirm the data key inside the Secret
+                - name: REFRESH_URL
+                  value: "https://api.ror.nhn.no/v2/self/apikeys"
+                - name: JSON_FIELD
+                  value: "token" # <<< confirm the field name in the API's JSON response
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 64Mi
+          volumes:
+            - name: script
+              configMap:
+                name: refresh-api-key-script
+                defaultMode: 0555
