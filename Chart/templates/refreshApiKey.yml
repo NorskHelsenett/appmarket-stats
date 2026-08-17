@@ -105,6 +105,14 @@ spec:
             - name: refresh-api-key
               image: alpine/k8s:1.30.2 # bundles kubectl, curl and jq
               command: ["sh", "/scripts/refresh.sh"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
               env:
                 - name: NAMESPACE
                   valueFrom:
