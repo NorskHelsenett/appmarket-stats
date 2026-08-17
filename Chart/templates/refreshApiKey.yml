@@ -45,8 +45,12 @@ data:
     NAMESPACE="${NAMESPACE:?NAMESPACE not set}"
     SECRET_NAME="${SECRET_NAME:?SECRET_NAME not set}"
     SECRET_KEY="${SECRET_KEY:-api-key}"
-    REFRESH_URL="${REFRESH_URL:-https://myapi/newkey}"
-    JSON_FIELD="${JSON_FIELD:-api_key}"
+    REFRESH_URL="${REFRESH_URL:-https://api.ror.nhn.no/v2/self/apikeys}"
+    # Field in the API's RESPONSE body holding the new key's value.
+    # Confirmed: the response is a flat {"key": "<value>"} object.
+    RESPONSE_KEY_FIELD="${RESPONSE_KEY_FIELD:-key}"
+    # Field in the REQUEST body used to label the new key being created.
+    REQUEST_NAME_FIELD="${REQUEST_NAME_FIELD:-name}"
 
     echo "Fetching current key from secret '${SECRET_NAME}' in namespace '${NAMESPACE}'..."
     CURRENT_KEY=$(kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" \
@@ -57,15 +61,22 @@ data:
       exit 1
     fi
 
-    echo "Requesting new key from ${REFRESH_URL}..."
+    # Give each generated key a unique, traceable name: <date>-<secret-name>,
+    # e.g. 2026-08-17-secret-x. Swap REQUEST_NAME_FIELD if the API calls this
+    # field something other than "name".
+    KEY_NAME="$(date -u +%Y-%m-%d)-${SECRET_NAME}"
+    BODY=$(jq -n --arg name "${KEY_NAME}" --arg field "${REQUEST_NAME_FIELD}" '{($field): $name}')
+
+    echo "Requesting new key '${KEY_NAME}' from ${REFRESH_URL}..."
     RESPONSE=$(curl -sS -f -X POST "${REFRESH_URL}" \
       -H "Authorization: Bearer ${CURRENT_KEY}" \
-      -H "Content-Type: application/json")
+      -H "Content-Type: application/json" \
+      -d "${BODY}")
 
-    NEW_KEY=$(printf '%s' "${RESPONSE}" | jq -r ".${JSON_FIELD} // empty")
+    NEW_KEY=$(printf '%s' "${RESPONSE}" | jq -r ".${RESPONSE_KEY_FIELD} // empty")
 
     if [ -z "${NEW_KEY}" ]; then
-      echo "ERROR: response did not contain a usable key under field '${JSON_FIELD}'." >&2
+      echo "ERROR: response did not contain a usable key under field '${RESPONSE_KEY_FIELD}'." >&2
       echo "Top-level fields in the response were: $(printf '%s' "${RESPONSE}" | jq -c 'keys' 2>/dev/null || echo 'unparseable JSON')" >&2
       exit 1
     fi
@@ -101,21 +112,25 @@ spec:
         spec:
           serviceAccountName: refresh-api-key-sa
           restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: refresh-api-key
-              image: alpine/k8s:1.30.2 # bundles kubectl, curl and jq
+              image: ncr.sky.nhn.no/dockerhub/alpine/k8s:1.30.2 # bundles kubectl, curl and jq
               command: ["sh", "/scripts/refresh.sh"]
+              # allowPrivilegeEscalation and capabilities can only be set at
+              # the container level, not inherited from the pod securityContext.
               securityContext:
-                runAsUser: 65532
-                runAsGroup: 65532
                 allowPrivilegeEscalation: false
                 capabilities:
-                  drop:
-                    - ALL
-                runAsNonRoot: true
-                seccompProfile:
-                  type: RuntimeDefault
+                  drop: ["ALL"]
               env:
+                - name: HOME
+                  value: "/tmp" # kubectl needs a writable HOME for its cache dir; UID 65532 has no passwd entry so $HOME isn't set otherwise
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -123,14 +138,18 @@ spec:
                 - name: SECRET_NAME
                   value: "acr-sync-api-key"
                 - name: SECRET_KEY
-                  value: "key" # <<< confirm the data key inside the Secret
+                  value: "key"
                 - name: REFRESH_URL
                   value: "https://api.ror.nhn.no/v2/self/apikeys"
-                - name: JSON_FIELD
-                  value: "token" # <<< confirm the field name in the API's JSON response
+                - name: RESPONSE_KEY_FIELD
+                  value: "key"
+                - name: REQUEST_NAME_FIELD
+                  value: "name"
               volumeMounts:
                 - name: script
                   mountPath: /scripts
+                - name: tmp
+                  mountPath: /tmp
               resources:
                 requests:
                   cpu: 50m
@@ -143,3 +162,5 @@ spec:
               configMap:
                 name: refresh-api-key-script
                 defaultMode: 0555
+            - name: tmp
+              emptyDir: {}
