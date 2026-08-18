@@ -46,12 +46,13 @@ data:
     SECRET_NAME="${SECRET_NAME:?SECRET_NAME not set}"
     SECRET_KEY="${SECRET_KEY:-api-key}"
     REFRESH_URL="${REFRESH_URL:-https://api.ror.nhn.no/v2/self/apikeys}"
-    RESPONSE_KEY_FIELD="${RESPONSE_KEY_FIELD:-key}"
+    RESPONSE_KEY_FIELD="${RESPONSE_KEY_FIELD:-token}"
     REQUEST_NAME_FIELD="${REQUEST_NAME_FIELD:-name}"
+    TTL_MS="${TTL_MS:-8640000000}"
 
     echo "Fetching current key from secret '${SECRET_NAME}' in namespace '${NAMESPACE}'..."
     CURRENT_KEY=$(kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" \
-      -o jsonpath="{.data.${SECRET_KEY}}" | base64 -d)
+      -o jsonpath="{.data.${SECRET_KEY}}" | base64 -d | tr -d '\n\r')
 
     if [ -z "${CURRENT_KEY}" ]; then
       echo "ERROR: could not read current key from secret '${SECRET_NAME}' (key '${SECRET_KEY}')." >&2
@@ -59,18 +60,31 @@ data:
     fi
 
     KEY_NAME="$(date -u +%Y-%m-%d)-${SECRET_NAME}"
-    BODY=$(jq -n --arg name "${KEY_NAME}" --arg field "${REQUEST_NAME_FIELD}" '{($field): $name}')
+    BODY=$(jq -n \
+      --arg name "${KEY_NAME}" \
+      --arg field "${REQUEST_NAME_FIELD}" \
+      --argjson ttl "${TTL_MS}" \
+      '{($field): $name, ttl: $ttl}')
 
-    echo "Requesting new key '${KEY_NAME}' from ${REFRESH_URL}..."
-    RESPONSE=$(curl -sS -f -X POST "${REFRESH_URL}" \
+    echo "Requesting new key '${KEY_NAME}' (ttl=${TTL_MS}ms) from ${REFRESH_URL}..."
+
+    HTTP_RESPONSE=$(curl -sS -X POST "${REFRESH_URL}" \
       -H "X-API-KEY: ${CURRENT_KEY}" \
       -H "Content-Type: application/json" \
-      -d "${BODY}")
+      -d "${BODY}" \
+      -w '\n%{http_code}')
+
+    HTTP_STATUS=$(printf '%s' "${HTTP_RESPONSE}" | tail -n1)
+    RESPONSE=$(printf '%s' "${HTTP_RESPONSE}" | sed '$d')
+
+    if [ "${HTTP_STATUS}" != "200" ] && [ "${HTTP_STATUS}" != "201" ]; then
+      echo "WARNING: API returned HTTP ${HTTP_STATUS} (expected 2xx). Known API bug: a key may have been issued anyway -- attempting to extract it from the response body." >&2
+    fi
 
     NEW_KEY=$(printf '%s' "${RESPONSE}" | jq -r ".${RESPONSE_KEY_FIELD} // empty")
 
     if [ -z "${NEW_KEY}" ]; then
-      echo "ERROR: response did not contain a usable key under field '${RESPONSE_KEY_FIELD}'." >&2
+      echo "ERROR: response did not contain a usable key under field '${RESPONSE_KEY_FIELD}' (HTTP status was ${HTTP_STATUS})." >&2
       echo "Top-level fields in the response were: $(printf '%s' "${RESPONSE}" | jq -c 'keys' 2>/dev/null || echo 'unparseable JSON')" >&2
       exit 1
     fi
@@ -104,6 +118,8 @@ spec:
         spec:
           serviceAccountName: refresh-api-key-sa
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: "test-regcred"
           securityContext:
             runAsNonRoot: true
             runAsUser: 65532
@@ -132,9 +148,11 @@ spec:
                 - name: REFRESH_URL
                   value: "https://api.ror.nhn.no/v2/self/apikeys"
                 - name: RESPONSE_KEY_FIELD
-                  value: "key"
+                  value: "token"
                 - name: REQUEST_NAME_FIELD
                   value: "name"
+                - name: TTL_MS
+                  value: "604800000"
               volumeMounts:
                 - name: script
                   mountPath: /scripts
