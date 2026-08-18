@@ -46,10 +46,7 @@ data:
     SECRET_NAME="${SECRET_NAME:?SECRET_NAME not set}"
     SECRET_KEY="${SECRET_KEY:-api-key}"
     REFRESH_URL="${REFRESH_URL:-https://api.ror.nhn.no/v2/self/apikeys}"
-    # Field in the API's RESPONSE body holding the new key's value.
-    # Confirmed: the response is a flat {"key": "<value>"} object.
     RESPONSE_KEY_FIELD="${RESPONSE_KEY_FIELD:-key}"
-    # Field in the REQUEST body used to label the new key being created.
     REQUEST_NAME_FIELD="${REQUEST_NAME_FIELD:-name}"
 
     echo "Fetching current key from secret '${SECRET_NAME}' in namespace '${NAMESPACE}'..."
@@ -61,15 +58,12 @@ data:
       exit 1
     fi
 
-    # Give each generated key a unique, traceable name: <date>-<secret-name>,
-    # e.g. 2026-08-17-secret-x. Swap REQUEST_NAME_FIELD if the API calls this
-    # field something other than "name".
     KEY_NAME="$(date -u +%Y-%m-%d)-${SECRET_NAME}"
     BODY=$(jq -n --arg name "${KEY_NAME}" --arg field "${REQUEST_NAME_FIELD}" '{($field): $name}')
 
     echo "Requesting new key '${KEY_NAME}' from ${REFRESH_URL}..."
     RESPONSE=$(curl -sS -f -X POST "${REFRESH_URL}" \
-      -H "Authorization: Bearer ${CURRENT_KEY}" \
+      -H "X-API-KEY: ${CURRENT_KEY}" \
       -H "Content-Type: application/json" \
       -d "${BODY}")
 
@@ -97,10 +91,8 @@ metadata:
   name: refresh-api-key
   namespace: acr
 spec:
-  # Runs at 03:00 on the 1st of January, April, July and October (quarterly).
   schedule: "0 3 1 1,4,7,10 *"
-  timeZone: "Europe/Oslo" # requires Kubernetes 1.27+; drop this field and
-                          # convert the schedule to UTC on older clusters
+  timeZone: "Europe/Oslo"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -120,17 +112,15 @@ spec:
               type: RuntimeDefault
           containers:
             - name: refresh-api-key
-              image: ncr.sky.nhn.no/dockerhub/alpine/k8s:1.30.2 # bundles kubectl, curl and jq
+              image: ncr.sky.nhn.no/dockerhub/alpine/k8s:1.30.2
               command: ["sh", "/scripts/refresh.sh"]
-              # allowPrivilegeEscalation and capabilities can only be set at
-              # the container level, not inherited from the pod securityContext.
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop: ["ALL"]
               env:
                 - name: HOME
-                  value: "/tmp" # kubectl needs a writable HOME for its cache dir; UID 65532 has no passwd entry so $HOME isn't set otherwise
+                  value: "/tmp"
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
