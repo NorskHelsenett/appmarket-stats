@@ -1,4 +1,4 @@
-# Default values for acr-ui
+# Default values for stats-ui
 replicaCount: 3
 
 image:
@@ -51,13 +51,13 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: acr-ui-tls
+    - secretName: stats-ui-tls
       hosts:
         - stats.appmarket.nhn.no
 
 hostRule:
   enabled: true
-  name: acr-ui-hostrule
+  name: stats-ui-hostrule
   fqdn: stats.appmarket.nhn.no
   analyticsProfile: NHN-System-Analytics-Profile
   analyticsPolicy:
@@ -86,10 +86,10 @@ affinity: {}
 # Database configuration
 database:
   enabled: true
-  name: acr-initdb
+  name: stats-initdb
   instances: 3
-  database: acr
-  owner: acr
+  database: stats
+  owner: stats
   storage:
     size: 20Gi
 
@@ -109,17 +109,17 @@ env:
   - name: DB_URL
     valueFrom:
       secretKeyRef:
-        name: acr-initdb-app
+        name: stats-initdb-app
         key: uri
 
 # Secrets
 secrets:
   database:
-    name: acr-initdb-app
+    name: stats-initdb-app
     create: false
   apiKey:
-    name: acr-sync-api-key
+    name: stats-sync-api-key
     create: false
 
 # Namespace
-namespace: acr
+namespace: stats

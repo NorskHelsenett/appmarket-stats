@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "acr-ui.fullname" . }}-ingress
+  name: {{ include "stats-ui.fullname" . }}-ingress
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "acr-ui.labels" . | nindent 4 }}
+    {{- include "stats-ui.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -34,7 +34,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "acr-ui.fullname" $ }}-service
+                name: {{ include "stats-ui.fullname" $ }}-service
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}

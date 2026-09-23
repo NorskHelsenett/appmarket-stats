@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: acr
-  name: acr-ui
+  namespace: stats
+  name: stats-ui
   labels:
-    app: acr-ui
+    app: stats-ui
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: acr-ui
+      app: stats-ui
   template:
     metadata:
       labels:
-        app: acr-ui
+        app: stats-ui
     spec:
       securityContext:
         runAsUser: 1000
@@ -22,7 +22,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - name: acr-ui
+      - name: stats-ui
         image: ncr.sky.nhn.no/appmarket-mgmt/acr-ui:alpha
         ports:
         - containerPort: 3000
@@ -41,7 +41,7 @@ spec:
           - name: DB_URL
             valueFrom:
               secretKeyRef:
-                name: acr-initdb-app
+                name: stats-initdb-app
                 key: uri
           - name: GITLAB_SECRET
             valueFrom:

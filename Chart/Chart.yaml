@@ -1,6 +1,6 @@
 apiVersion: v2
-name: acr-ui
-description: A Helm chart for AppMarket Cost Report UI application
+name: stats
+description: A Helm chart for AppMarket Statistics UI application
 type: application
 version: 0.1.0
 appVersion: "0.0.1"
@@ -9,5 +9,5 @@ maintainers:
 keywords:
   - cost-report
   - ui
-  - svelte
-home: https://costreport.appmarket.nhn.no
+  - react
+home: https://stats.appmarket.nhn.no

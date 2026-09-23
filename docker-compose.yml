@@ -6,6 +6,6 @@ services:
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_PASSWORD=acr123
-      - POSTGRES_USER=acr123
-      - POSTGRES_DB=acr
+      - POSTGRES_PASSWORD=stats123
+      - POSTGRES_USER=stats123
+      - POSTGRES_DB=stats

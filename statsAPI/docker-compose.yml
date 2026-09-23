@@ -15,13 +15,13 @@ services:
     environment:
       POSTGRES_USER: labuser
       POSTGRES_PASSWORD: labpass
-      POSTGRES_DB: acr
+      POSTGRES_DB: stats
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U labuser -d acr"]
+      test: ["CMD-SHELL", "pg_isready -U labuser -d stats"]
       interval: 5s
       timeout: 5s
       retries: 5

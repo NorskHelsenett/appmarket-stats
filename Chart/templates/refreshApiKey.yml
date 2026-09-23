@@ -2,18 +2,18 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: refresh-api-key-sa
-  namespace: acr
+  namespace: stats
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: refresh-api-key-role
-  namespace: acr
+  namespace: stats
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: ["acr-sync-api-key"]
+    resourceNames: ["stats-sync-api-key"]
     verbs: ["get", "patch"]
 
 ---
@@ -21,11 +21,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: refresh-api-key-rolebinding
-  namespace: acr
+  namespace: stats
 subjects:
   - kind: ServiceAccount
     name: refresh-api-key-sa
-    namespace: acr
+    namespace: stats
 roleRef:
   kind: Role
   name: refresh-api-key-role
@@ -36,7 +36,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: refresh-api-key-script
-  namespace: acr
+  namespace: stats
 data:
   refresh.sh: |
     #!/bin/sh
@@ -103,7 +103,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: refresh-api-key
-  namespace: acr
+  namespace: stats
 spec:
   schedule: "0 3 1 1,4,7,10 *"
   timeZone: "Europe/Oslo"
@@ -142,7 +142,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: SECRET_NAME
-                  value: "acr-sync-api-key"
+                  value: "stats-sync-api-key"
                 - name: SECRET_KEY
                   value: "key"
                 - name: REFRESH_URL
