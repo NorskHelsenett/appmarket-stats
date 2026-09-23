@@ -38,18 +38,22 @@ export function SortableHeader<T>({
   sortKey,
   sortDir,
   onSort,
+  align = "left",
 }: {
   label: string;
   column: keyof T;
   sortKey: keyof T;
   sortDir: SortDir;
   onSort: (column: keyof T) => void;
+  align?: "left" | "right";
 }) {
   const active = sortKey === column;
   return (
     <th
       onClick={() => onSort(column)}
-      className="text-left py-3 px-4 text-white font-semibold tracking-[0.2px] cursor-pointer select-none whitespace-nowrap"
+      className={`${
+        align === "right" ? "text-right" : "text-left"
+      } py-3 px-4 text-white font-semibold tracking-[0.2px] cursor-pointer select-none whitespace-nowrap`}
       title="Click to sort"
     >
       {label} {active ? (sortDir === "desc" ? "▼" : "▲") : ""}

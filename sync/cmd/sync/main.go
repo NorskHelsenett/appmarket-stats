@@ -1,12 +1,12 @@
 package main
 
 import (
+	sync "app-market-cost-report-sync"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
-
-	sync "app-market-cost-report-sync"
 
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient"
 	"github.com/NorskHelsenett/ror/pkg/clients/rorclient/transports/resttransport"
@@ -35,9 +35,8 @@ type State struct {
 type appResult struct {
 	name     string
 	billable bool
+	version  string
 }
-
-
 
 func NewAppMarketSync() (*AppMarketSync, error) {
 	db, err := sync.OpenDatabase()
@@ -50,7 +49,7 @@ func NewAppMarketSync() (*AppMarketSync, error) {
 	}
 
 	transport := resttransport.NewRorHttpTransport(&httpclient.HttpTransportClientConfig{
-		BaseURL:      "https://api.ror.nhn.no",
+		BaseURL: "https://api.ror.nhn.no",
 		//BaseURL:      "http://localhost:10000",
 		AuthProvider: httpauthprovider.NewAuthProvider(httpauthprovider.AuthPoviderTypeAPIKey, os.Getenv("API_KEY")),
 		Role:         "",
@@ -106,31 +105,31 @@ func (s *AppMarketSync) fetchClusters() error {
 
 	ctx := context.Background()
 
-const pageSize = 100
+	const pageSize = 100
 
 	var clusters []*sync.Cluster
-offset := 0
+	offset := 0
 
-for {
-query := rorresources.ResourceQuery{
-    VersionKind: schema.GroupVersionKind{
-        Kind:    "KubernetesCluster",
-    },
-    Limit: pageSize,
-	Offset: offset,
-}
+	for {
+		query := rorresources.ResourceQuery{
+			VersionKind: schema.GroupVersionKind{
+				Kind: "KubernetesCluster",
+			},
+			Limit:  pageSize,
+			Offset: offset,
+		}
 
-	unmapped, err := s.client.ResourcesV2().Get(ctx, query)
-	if err != nil {
-		return err
-	}
+		unmapped, err := s.client.ResourcesV2().Get(ctx, query)
+		if err != nil {
+			return err
+		}
 
 		for _, u := range unmapped.Resources {
 			clusters = append(clusters, &sync.Cluster{
-				ID:   string(u.Metadata.UID),
-				Name: u.Metadata.Name,
+				ID:          string(u.Metadata.UID),
+				Name:        u.Metadata.Name,
 				Environment: u.KubernetesClusterResource.Status.AgentStatus.Environment,
-				Workspace: u.KubernetesClusterResource.Status.AgentStatus.Workspace,
+				Workspace:   u.KubernetesClusterResource.Status.AgentStatus.Workspace,
 			})
 		}
 
@@ -138,11 +137,10 @@ query := rorresources.ResourceQuery{
 			break
 		}
 		offset += pageSize
-}
+	}
 	s.state.clusters = clusters
 	return nil
 }
-
 
 func (s *AppMarketSync) fetchInstances() error {
 	for _, cluster := range s.state.clusters {
@@ -166,12 +164,12 @@ func (s *AppMarketSync) fetchInstances() error {
 				ApplicationID: app.ID,
 				ClusterID:     cluster.ID,
 				Billable:      appRes.billable,
+				Version:       appRes.version,
 			})
 		}
 	}
 	return nil
 }
-
 
 func (s *AppMarketSync) getApplications(clusterID string) ([]appResult, error) {
 	apps, err := s.client.ResourcesV2().Get(context.Background(), rorresources.ResourceQuery{
@@ -187,25 +185,28 @@ func (s *AppMarketSync) getApplications(clusterID string) ([]appResult, error) {
 			},
 		},
 	},
-)
+	)
 	if err != nil {
 		return nil, err
 	}
 	results := []appResult{}
 	for _, app := range apps.Resources {
-	if _, ok := app.Metadata.Annotations["appmarket.nhn.no/application"]; !ok {
-    continue
-}
+		if _, ok := app.Metadata.Annotations["appmarket.nhn.no/application"]; !ok {
+			continue
+		}
+		b, _ := json.MarshalIndent(app.ApplicationResource.Spec.Source.TargetRevision, "", "  ")
+		fmt.Println("APP:", string(b))
 		results = append(results, appResult{
 			name:     app.Metadata.Annotations["appmarket.nhn.no/application"],
 			billable: app.Metadata.Labels["billable"] == "true",
+			version:  app.ApplicationResource.Spec.Source.TargetRevision,
 		})
 	}
 	return results, nil
 }
 
 func (s *AppMarketSync) persistData() error {
-				syncID := time.Now().UnixNano()
+	syncID := time.Now().UnixNano()
 
 	if err := s.db.PersistClusters(s.state.clusters, syncID); err != nil {
 		return err

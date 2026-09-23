@@ -16,6 +16,7 @@ export interface Instance {
   application_id: string;
   cluster_id: string;
   billable: boolean;
+  version: string;
 }
 
 export interface AppInstall {

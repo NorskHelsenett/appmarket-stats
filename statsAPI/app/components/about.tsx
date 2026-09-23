@@ -46,8 +46,8 @@ export default function About({ loaderData }: Route.ComponentProps) {
         to="/"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-body no-underline hover:text-brand-header"
       >
-        <span aria-hidden="true">←</span>
-        Tilbake
+        <span aria-hidden="true" className="text-lg">←</span>
+        Back
       </Link>
       <section className="mb-6 rounded-lg border border-brand-line bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,41,32,0.08)]">
         <h2 className="mb-2 text-lg font-semibold text-brand-header">Hva er denne siden?</h2>

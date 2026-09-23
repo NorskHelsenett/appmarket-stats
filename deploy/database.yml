@@ -1,8 +1,8 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  namespace: acr
-  name: acr-initdb
+  namespace: stats
+  name: stats-initdb
 spec:
   instances: 3
   bootstrap:

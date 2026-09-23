@@ -41,7 +41,14 @@ export default function AppInstallsTable({ appInstalls }: AppInstalls) {
   <thead>
     <tr className="bg-brand-header">
      <SortableHeader label="App" column="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-     <SortableHeader label="Installs" column="instance_count" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+  <SortableHeader
+  label="Installs"
+  column="instance_count"
+  sortKey={sortKey}
+  sortDir={sortDir}
+  onSort={toggleSort}
+  align="right"
+/>
     </tr>
   </thead>
   <tbody>

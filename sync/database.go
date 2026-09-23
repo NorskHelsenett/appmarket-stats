@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -10,9 +11,9 @@ import (
 )
 
 type Application struct {
-	ID   string `gorm:"primaryKey"`
-	Name string `gorm:"default:0"`
-    SyncID        int64 `gorm:"not null;default:0;index"`
+	ID     string `gorm:"primaryKey"`
+	Name   string `gorm:"default:0"`
+	SyncID int64  `gorm:"not null;default:0;index"`
 }
 
 type Cluster struct {
@@ -20,18 +21,19 @@ type Cluster struct {
 	Name        string `gorm:"default:0"`
 	Workspace   string `gorm:"default:0"`
 	Environment string `gorm:"default:0"`
-    SyncID        int64 `gorm:"not null;default:0;index"`
+	SyncID      int64  `gorm:"not null;default:0;index"`
 }
 
 type Instance struct {
-	ID            string `gorm:"primaryKey"` // Remove if you don't need this
-	ApplicationID string `gorm:"primaryKey;index:idx_instances_cluster_application,priority:2"`
-	ClusterID     string `gorm:"primaryKey;index:idx_instances_cluster_application,priority:1"`
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
-	Billable      bool `gorm:"default:false"`
-	SyncID        int64 `gorm:"not null;default:0;index"`
-	Application Application `gorm:"foreignKey:ApplicationID;references:ID;constraint:OnDelete:CASCADE"`
-	Cluster     Cluster     `gorm:"foreignKey:ClusterID;references:ID;constraint:OnDelete:CASCADE"`
+	ID            string      `gorm:"primaryKey"` // Remove if you don't need this
+	ApplicationID string      `gorm:"primaryKey;index:idx_instances_cluster_application,priority:2"`
+	ClusterID     string      `gorm:"primaryKey;index:idx_instances_cluster_application,priority:1"`
+	CreatedAt     time.Time   `gorm:"autoCreateTime"`
+	Billable      bool        `gorm:"default:false"`
+	SyncID        int64       `gorm:"not null;default:0;index"`
+	Version       string      `gorm:"not null;default:0"`
+	Application   Application `gorm:"foreignKey:ApplicationID;references:ID;constraint:OnDelete:CASCADE"`
+	Cluster       Cluster     `gorm:"foreignKey:ClusterID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 type Database struct {
@@ -106,6 +108,8 @@ func (d *Database) PersistApplications(apps map[string]*Application, syncID int6
 func (d *Database) PersistInstances(instances []*Instance, syncID int64) error {
 
 	for _, instance := range instances {
+		b, _ := json.MarshalIndent(instance, "", "  ")
+		fmt.Println("Persist:", string(b))
 		instance.SyncID = syncID
 		result := d.driver.Create(instance)
 		if err := result.Error; err != nil {
