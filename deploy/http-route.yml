@@ -10,10 +10,10 @@ metadata:
 spec:
   parentRefs:
     - name: am-gateway
-      sectionName: stats2.appmarket.nhn.no
+      sectionName: stats.appmarket.nhn.no
       namespace: gateways
   hostnames:
-    - stats2.appmarket.nhn.no
+    - stats.appmarket.nhn.no
   rules:
     - backendRefs:
         - group: ""
